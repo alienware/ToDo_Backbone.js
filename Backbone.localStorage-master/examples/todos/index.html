@@ -26,7 +26,7 @@
   <div id="todoapp">
 
     <header>
-      <h1>Todos</h1>
+      <h1>Todos - First</h1>
       <input id="new-todo" type="text" placeholder="What needs to be done?">
     </header>
 
@@ -43,6 +43,26 @@
 
   </div>
   
+  <div id="todoapp2">
+
+    <header>
+      <h1>Todos - Second</h1>
+      <input id="new-todo2" type="text" placeholder="What needs to be done?">
+    </header>
+
+    <section id="main2">
+      <input id="toggle-all2" type="checkbox">
+      <label for="toggle-all2">Mark all as complete</label>
+      <ul id="todo-list2"></ul>
+    </section>
+
+    <footer>
+      <a id="clear-completed2">Clear completed</a>
+      <div id="todo-count2"></div>
+    </footer>
+
+  </div>
+  <!--
   <div id="instructions">
     Double-click to edit a todo.
   </div>
@@ -53,7 +73,7 @@
     <a href="http://jgn.me/">J&eacute;r&ocirc;me Gravel-Niquet</a>.
     <br />Rewritten by: <a href="http://addyosmani.github.com/todomvc">TodoMVC</a>.
   </div>
-
+  -->
   <script src="../../spec/support/jquery.js"></script>
   <script src="../../spec/support/underscore.js"></script>
   <script src="../../spec/support/backbone.js"></script>
@@ -70,12 +90,19 @@
     </div>
     <input class="edit" type="text" value="<%- title %>" />
   </script>
-
+  
   <script type="text/template" id="stats-template">
     <% if (done) { %>
       <a id="clear-completed">Clear <%= done %> completed <%= done == 1 ? 'item' : 'items' %></a>
     <% } %>
     <div class="todo-count"><b><%= remaining %></b> <%= remaining == 1 ? 'item' : 'items' %> left</div>
+  </script>
+  
+  <script type="text/template" id="stats-template2">
+    <% if (done) { %>
+      <a id="clear-completed2">Clear <%= done %> completed <%= done == 1 ? 'item' : 'items' %></a>
+    <% } %>
+    <div class="todo-count2"><b><%= remaining %></b> <%= remaining == 1 ? 'item' : 'items' %> left</div>
   </script>
 
   </body>

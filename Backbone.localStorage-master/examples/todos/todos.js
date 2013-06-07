@@ -16,8 +16,9 @@ $(function(){
     defaults: function() {
       return {
         title: "empty todo...",
-        order: Todos.nextOrder(),
-        done: false
+        order: this.collection.nextOrder(),
+        done: false,
+		list: false
       };
     },
 
@@ -32,7 +33,6 @@ $(function(){
     toggle: function() {
       this.save({done: !this.get("done")});
     }
-
   });
 
   // Todo Collection
@@ -45,10 +45,12 @@ $(function(){
     // Reference to this collection's model.
     model: Todo,
 
-    // Save all of the todo items under the `"todos-backbone"` namespace.
-    localStorage: new Backbone.LocalStorage("todos-backbone"),
-
-    // Filter down the list of all todo items that are finished.
+    // Save all of the todo items under the separate namespace.
+	initialize : function(options){
+      this.localStorage = new Backbone.LocalStorage(options.list);
+	},
+	
+	// Filter down the list of all todo items that are finished.
     done: function() {
       return this.filter(function(todo){ return todo.get('done'); });
     },
@@ -69,11 +71,11 @@ $(function(){
     comparator: function(todo) {
       return todo.get('order');
     }
-
   });
 
   // Create our global collection of **Todos**.
-  var Todos = new TodoList;
+  var Todos = new TodoList({list: 'todos-localstorage'});
+  var Todos2 = new TodoList({list: 'todos2-localstorage'});
 
   // Todo Item View
   // --------------
@@ -114,8 +116,15 @@ $(function(){
 
     // Toggle the `"done"` state of the model.
     toggleDone: function() {
-      this.model.toggle();
-    },
+		if(this.model.get('list')) {
+			Todos.create({title: this.model.get('title'), list: false});
+		}
+		else {
+			Todos2.create({title: this.model.get('title'), list: true});
+		}
+	  this.model.destroy();
+	  
+	},
 
     // Switch this view into `"editing"` mode, displaying the input field.
     edit: function() {
@@ -163,8 +172,8 @@ $(function(){
     events: {
       "keypress #new-todo":  "createOnEnter",
       "click #clear-completed": "clearCompleted",
-      "click #toggle-all": "toggleAllComplete"
-    },
+      "click #toggle-all": "toggleAllComplete",
+	},
 
     // At initialization we bind to the relevant events on the `Todos`
     // collection, when items are added or changed. Kick things off by
@@ -180,8 +189,8 @@ $(function(){
 
       this.footer = this.$('footer');
       this.main = $('#main');
-
-      Todos.fetch();
+	  
+	  Todos.fetch();
     },
 
     // Re-rendering the App just means refreshing the statistics -- the rest
@@ -207,7 +216,7 @@ $(function(){
     addOne: function(todo) {
       var view = new TodoView({model: todo});
       this.$("#todo-list").append(view.render().el);
-    },
+	},
 
     // Add all items in the **Todos** collection at once.
     addAll: function() {
@@ -220,7 +229,7 @@ $(function(){
       if (e.keyCode != 13) return;
       if (!this.input.val()) return;
 
-      Todos.create({title: this.input.val()});
+      Todos.create({title: this.input.val(), list: false});
       this.input.val('');
     },
 
@@ -234,10 +243,100 @@ $(function(){
       var done = this.allCheckbox.checked;
       Todos.each(function (todo) { todo.save({'done': done}); });
     }
+	
+  });
+  
+  var AppView2 = Backbone.View.extend({
+	
+	// Instead of generating a new element, bind to the existing skeleton of
+    // the App already present in the HTML.
+    el: $("#todoapp2"),
 
+    // Our template for the line of statistics at the bottom of the app.
+    statsTemplate: _.template($('#stats-template').html()),
+
+    // Delegated events for creating new items, and clearing completed ones.
+    events: {
+      "keypress #new-todo2":  "createOnEnter",
+      "click #clear-completed2": "clearCompleted",
+      "click #toggle-all2": "toggleAllComplete",
+	},
+
+    // At initialization we bind to the relevant events on the `Todos`
+    // collection, when items are added or changed. Kick things off by
+    // loading any preexisting todos that might be saved in *localStorage*.
+    initialize: function() {
+
+      this.input = this.$("#new-todo2");
+      this.allCheckbox = this.$("#toggle-all2")[0];
+
+      this.listenTo(Todos2, 'add', this.addOne);
+      this.listenTo(Todos2, 'reset', this.addAll);
+      this.listenTo(Todos2, 'all', this.render);
+
+      this.footer = this.$('footer');
+      this.main = $('#main2');
+	  
+	  Todos2.fetch();
+    },
+
+    // Re-rendering the App just means refreshing the statistics -- the rest
+    // of the app doesn't change.
+    render: function() {
+      //var App = new AppView;
+	
+	  var done2 = Todos2.done().length;
+      var remaining2 = Todos2.remaining().length;
+
+      if (Todos2.length) {
+        this.main.show();
+        this.footer.show();
+        this.footer.html(this.statsTemplate({done: done2, remaining: remaining2}));
+      } else {
+        this.main.hide();
+        this.footer.hide();
+      }
+
+      this.allCheckbox.checked = !remaining2;
+    },
+
+    // Add a single todo item to the list by creating a view for it, and
+    // appending its element to the `<ul>`.
+    addOne: function(todo) {
+      var view2 = new TodoView({model: todo});
+      this.$("#todo-list2").append(view2.render().el);
+	},
+
+    // Add all items in the **Todos** collection at once.
+    addAll: function() {
+      Todos2.each(this.addOne, this);
+    },
+
+    // If you hit return in the main input field, create new **Todo** model,
+    // persisting it to *localStorage*.
+    createOnEnter: function(e) {
+      if (e.keyCode != 13) return;
+      if (!this.input.val()) return;
+
+      Todos2.create({title: this.input.val(), list: true});
+      this.input.val('');
+    },
+
+    // Clear all done todo items, destroying their models.
+    clearCompleted: function() {
+      _.invoke(Todos2.done(), 'destroy');
+      return false;
+    },
+
+    toggleAllComplete: function () {
+      var done2 = this.allCheckbox.checked;
+      Todos2.each(function (todo) { todo.save({'done': done2}); });
+    }
+	
   });
 
   // Finally, we kick things off by creating the **App**.
   var App = new AppView;
-
+  var App2 = new AppView2;
+    
 });
